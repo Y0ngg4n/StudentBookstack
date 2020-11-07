@@ -56,7 +56,21 @@ export default class CreateNotebookModal extends React.Component {
                                onChangeText={text => this.onDirectoryChange(text)}/>
                         </Item>
                         <Item>
-                            <Radio style={{backgroundColor: "#Fa12Fa"}}><Text>Color</Text></Radio>
+                            <Radio style={{backgroundColor: "#03071E"}}/>
+                            <Radio style={{backgroundColor: "#370617"}}/>
+                            <Radio style={{backgroundColor: "#6A040F"}}/>
+                            <Radio style={{backgroundColor: "#9D0208"}}/>
+                            <Radio style={{backgroundColor: "#D00000"}}/>
+                            <Radio style={{backgroundColor: "#DC2F02"}}/>
+                            <Radio style={{backgroundColor: "#E85D04"}}/>
+                            <Radio style={{backgroundColor: "#F48C06"}}/>
+                            <Radio style={{backgroundColor: "#FAA307"}}/>
+                            <Radio style={{backgroundColor: "#FFBA08"}}/>
+                            <Radio style={{backgroundColor: "#EF476F"}}/>
+                            <Radio style={{backgroundColor: "#FFD166"}}/>
+                            <Radio style={{backgroundColor: "#06D6A0"}}/>
+                            <Radio style={{backgroundColor: "#118AB2"}}/>
+                            <Radio style={{backgroundColor: "#073B4C"}}/>
                         </Item>
                         <Item>
                         <Button disabled={this.state.saveDisabled}
