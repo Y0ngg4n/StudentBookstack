@@ -3,7 +3,8 @@ import {Modal} from "react-native";
 import {Input, Button, Container, Text, Radio, Form, Item} from "native-base";
 import i18n from 'i18n-js';
 import * as FileSystem from "expo-file-system";
-import {ColorPicker, TriangleColorPicker} from 'react-native-color-picker'
+import {TriangleColorPicker} from "react-native-color-picker";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default class CreateNotebookModal extends React.Component {
 
@@ -15,6 +16,10 @@ export default class CreateNotebookModal extends React.Component {
             directoryName: "",
             saveDisabled: true,
             visible: false,
+            selectedColor: 0,
+            colorChooser: false,
+            choosedColor: "#03071E",
+            defaultColors: ["#03071E", "#370617", "#6A040F", "#9D0208", "#D00000", "#DC2F02", "#E85D04", "#F48C06", "#FAA307", "#FFBA08", "#EF476F", "#FFD166", "#06D6A0", "#118AB2", "#073B4C"]
         }
     }
 
@@ -35,51 +40,89 @@ export default class CreateNotebookModal extends React.Component {
     }
 
     async onSaveFolder(event) {
-        await FileSystem.makeDirectoryAsync(this.state.fileDir + "/" + this.state.directoryName + "/",
-            {intermediates: true})
+        dir = this.state.fileDir + "/" + this.state.directoryName
+        await FileSystem.makeDirectoryAsync(dir, {intermediates: true})
         this.setState((prevState) => ({
             ...prevState,
             visible: false
         }))
-        console.log(this.props.context.state)
+        const config = {
+            color: this.state.choosedColor
+        }
+        try {
+            await AsyncStorage.setItem(dir, JSON.stringify(config))
+        } catch (e) {
+            console.log(e)
+        }
         await this.props.onCreated(this.state.fileDir, this.state.notebookDir, this.state.categoryDir, this.state.chapterDir, this.props.context)
     }
 
+    setColor(index) {
+        this.setState((prevState) => ({
+            ...prevState,
+            selectedColor: index,
+            choosedColor: this.state.defaultColors[index]
+        }))
+    }
+
+    onChooseColor() {
+        this.setState((prevState) => ({
+            ...prevState,
+            colorChooser: true
+        }))
+    }
+
+    onColorSelected(color) {
+        this.setState((prevState) => ({
+            ...prevState,
+            choosedColor: color,
+            colorChooser: false
+        }))
+    }
+
     render() {
-        return (
-            <Modal visible={this.state.visible}>
-                <Container>
-                    <Form>
-                        <Item>
+        const form = (
+            <Container>
+                <Form>
+                    <Item>
                         <Input value={this.state.directoryName}
                                placeholder={i18n.t('FileTree.CreateNotebookModal.NamePlaceholder')}
                                onChangeText={text => this.onDirectoryChange(text)}/>
-                        </Item>
-                        <Item>
-                            <Radio style={{backgroundColor: "#03071E"}}/>
-                            <Radio style={{backgroundColor: "#370617"}}/>
-                            <Radio style={{backgroundColor: "#6A040F"}}/>
-                            <Radio style={{backgroundColor: "#9D0208"}}/>
-                            <Radio style={{backgroundColor: "#D00000"}}/>
-                            <Radio style={{backgroundColor: "#DC2F02"}}/>
-                            <Radio style={{backgroundColor: "#E85D04"}}/>
-                            <Radio style={{backgroundColor: "#F48C06"}}/>
-                            <Radio style={{backgroundColor: "#FAA307"}}/>
-                            <Radio style={{backgroundColor: "#FFBA08"}}/>
-                            <Radio style={{backgroundColor: "#EF476F"}}/>
-                            <Radio style={{backgroundColor: "#FFD166"}}/>
-                            <Radio style={{backgroundColor: "#06D6A0"}}/>
-                            <Radio style={{backgroundColor: "#118AB2"}}/>
-                            <Radio style={{backgroundColor: "#073B4C"}}/>
-                        </Item>
-                        <Item>
+                    </Item>
+                    <Item>
+                        {this.state.defaultColors.map((value, index) => {
+                            return (<Radio key={index} onPress={() => this.setColor(index)}
+                                           selected={this.state.selectedColor === index ? true : false}
+                                           color={value}
+                                           style={{backgroundColor: value, flex: 1, fontScale: 50}}/>)
+                        })}
+                    </Item>
+                    <Item>
+                        <Button onPress={() => this.onChooseColor()}>
+                            <Text>{i18n.t('FileTree.CreateNotebookModal.ChooseColor')}</Text>
+                        </Button>
+                    </Item>
+                    <Item>
                         <Button disabled={this.state.saveDisabled}
                                 onPress={async (e) => await this.onSaveFolder()}>
                             <Text>{i18n.t('FileTree.CreateNotebookModal.SaveFolder')}</Text>
                         </Button>
-                        </Item>
-                    </Form>
-                </Container>
+                    </Item>
+                </Form>
+            </Container>
+        )
+
+        const colorChoose = (
+            <Container>
+                <TriangleColorPicker
+                    onColorSelected={color => this.onColorSelected(color)}
+                    style={{flex: 1}}/>
+            </Container>
+        )
+
+        return (
+            <Modal visible={this.state.visible}>
+                {this.state.colorChooser ? colorChoose : form}
             </Modal>
         )
     }

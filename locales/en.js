@@ -2,6 +2,7 @@ const en = {
     FileTree: {
         Buttons:{
             Edit: "Edit",
+            Delete: "Delete",
             AddNotebook: "Add Notebook",
             AddCategory: "Add Category",
             AddChapter: "Add Chapter",

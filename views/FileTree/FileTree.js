@@ -5,6 +5,7 @@ import {bookstackDir} from "../../config"
 import i18n from 'i18n-js';
 import {Ionicons, FontAwesome5} from '@expo/vector-icons';
 import CreateNotebookModal from "./Modals/CreateNotebookModal";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default class FileTree extends React.Component {
 
@@ -18,6 +19,7 @@ export default class FileTree extends React.Component {
             categorySelectedIndex: -1,
             notebookCheckedList: [],
             notebookContent: [],
+            notebookConfig: [],
             categoryContent: [],
             chapterContent: [],
             pageContent: [],
@@ -30,6 +32,7 @@ export default class FileTree extends React.Component {
     }
 
     async componentDidMount() {
+        // await FileSystem.deleteAsync(this.state.fileDir, {idempotent: true})
         await FileSystem.makeDirectoryAsync(this.state.fileDir, {intermediates: true})
         await this.refreshContent(this.state.fileDir, this.state.notebookDir,
             this.state.categoryDir, this.state.chapterDir, this)
@@ -112,18 +115,18 @@ export default class FileTree extends React.Component {
         }))
     }
 
-    concatenateNotebookDir(){
+    concatenateNotebookDir() {
         return this.state.fileDir + "/"
             + encodeURIComponent(this.state.notebookContent[this.state.notebookSelectedIndex])
     }
 
-    concatenateCategoryDir(){
+    concatenateCategoryDir() {
         return this.state.fileDir + "/"
             + encodeURIComponent(this.state.notebookContent[this.state.notebookSelectedIndex])
-        + "/" + encodeURIComponent(this.state.categoryContent[this.state.categorySelectedIndex])
+            + "/" + encodeURIComponent(this.state.categoryContent[this.state.categorySelectedIndex])
     }
 
-    concatenateChapterDir(){
+    concatenateChapterDir() {
         return this.state.fileDir + "/"
             + encodeURIComponent(this.state.notebookContent[this.state.notebookSelectedIndex])
             + "/" + encodeURIComponent(this.state.categoryContent[this.state.categorySelectedIndex])
@@ -141,8 +144,38 @@ export default class FileTree extends React.Component {
     onEditButtonPressed() {
         this.setState((prevState) => ({
             ...prevState,
-            edit: !prevState.edit
+            edit: !prevState.edit,
+            checkedNotebooks: []
         }))
+    }
+
+    onNotebookChecked(name) {
+        if (this.state.checkedNotebooks.includes(name)) {
+            let newCheckedNotebooks = this.state.checkedNotebooks
+            newCheckedNotebooks.splice(newCheckedNotebooks.indexOf(name), 1)
+            this.setState((prevState) => ({
+                ...prevState,
+                checkedNotebooks: newCheckedNotebooks
+            }))
+        } else {
+            let newCheckedNotebooks = this.state.checkedNotebooks
+            newCheckedNotebooks.push(name)
+            this.setState((prevState) => ({
+                ...prevState,
+                checkedNotebooks: newCheckedNotebooks
+            }))
+        }
+    }
+
+    async onDelete() {
+        for (let i = 0; i < this.state.checkedNotebooks.length; i++) {
+            await FileSystem.deleteAsync(this.state.fileDir + "/" + this.state.checkedNotebooks[i])
+        }
+        this.setState((prevState) => ({
+            ...prevState,
+            checkedNotebooks: []
+        }))
+        await this.refreshContent()
     }
 
     render() {
@@ -150,25 +183,34 @@ export default class FileTree extends React.Component {
             <Container style={{flexDirection: 'row'}}>
                 <Button
                     onPress={() => this.onEditButtonPressed()}><Text>{i18n.t('FileTree.Buttons.Edit')}</Text></Button>
+                <Button disabled={!this.state.edit} onPress={async () => await this.onDelete()}>
+                    <Text>{i18n.t('FileTree.Buttons.Delete')}</Text>
+                </Button>
                 <Container style={{flexDirection: 'column'}}>
                     <Button
                         onPress={() => this.createNewNotebook()}><Text>{i18n.t('FileTree.Buttons.AddNotebook')}</Text></Button>
                     <Content>
                         <List>
                             {this.state.notebookContent.map((value, index) => {
+                                const config = this.state.notebookConfig[index]
                                 if (this.state.edit) {
-                                    const notebookChecked = this.state.checkedNotebooks.includes(value) ? true : false;
+                                    const notebookChecked = this.state.checkedNotebooks.includes(value);
                                     return (
-                                        <ListItem key={index} selected={this.state.notebookSelectedIndex === index}
-                                                  onPress={() => this.selectedNotebook(index)}>
+                                        <ListItem
+                                            style={{backgroundColor: config.color}}
+                                            key={index} selected={this.state.notebookSelectedIndex === index}
+                                            onPress={() => this.selectedNotebook(index)}>
                                             <Left>
                                                 <Ionicons name={"ios-book"}/></Left>
                                             <Body><Text>{value}</Text></Body>
-                                            <Right><CheckBox checked={notebookChecked}/></Right>
+                                            <Right><CheckBox onPress={() => this.onNotebookChecked(value)}
+                                                             checked={notebookChecked}/></Right>
                                         </ListItem>);
                                 } else {
-                                    return (<ListItem key={index} selected={this.state.notebookSelectedIndex === index}
-                                                      onPress={() => this.selectedNotebook(index)}>
+                                    return (<ListItem
+                                        style={{backgroundColor: config.color}}
+                                        key={index} selected={this.state.notebookSelectedIndex === index}
+                                        onPress={() => this.selectedNotebook(index)}>
                                         <Left><Ionicons name={"ios-book"}/></Left>
                                         <Body><Text>{value}</Text></Body>
                                     </ListItem>);
@@ -185,14 +227,19 @@ export default class FileTree extends React.Component {
 
     async refreshContent(fileDir, notebookDir, categoryDir, chapterDir, context) {
         const notebookContent = await FileSystem.readDirectoryAsync(fileDir)
-
         const categoryContent = context.state.notebookSelectedIndex !== -1 ? await FileSystem.readDirectoryAsync(notebookDir) : []
         const chapterContent = context.state.categoryDir ? await FileSystem.readDirectoryAsync(categoryDir) : []
         const pageContent = context.state.chapterDir ? await FileSystem.readDirectoryAsync(chapterDir) : []
 
+        const notebookConfig = []
+        for (let i = 0; i < notebookContent.length; i++) {
+            notebookConfig.push(JSON.parse(await AsyncStorage.getItem(fileDir + "/" + notebookContent[i])))
+        }
+
         context.setState((prevState) => ({
             ...prevState,
             notebookContent: notebookContent,
+            notebookConfig: notebookConfig,
             categoryContent: categoryContent,
             chapterContent: chapterContent,
             pagesContent: pageContent,
