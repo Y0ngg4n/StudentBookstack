@@ -6,6 +6,7 @@ import i18n from 'i18n-js';
 import {Ionicons, FontAwesome5} from '@expo/vector-icons';
 import CreateNotebookModal from "./Modals/CreateNotebookModal";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import EditNotebookModal from "./Modals/EditNotebookModal";
 
 export default class FileTree extends React.Component {
 
@@ -25,10 +26,11 @@ export default class FileTree extends React.Component {
             pageContent: [],
             checkedNotebooks: []
         }
-        this.createNoteBookModal = React.createRef()
+        this.createNotebookModal = React.createRef()
         this.createCategoryModal = React.createRef()
         this.createChapterModal = React.createRef()
         this.createPageModal = React.createRef()
+        this.editNotebookModal = React.createRef()
     }
 
     async componentDidMount() {
@@ -39,7 +41,7 @@ export default class FileTree extends React.Component {
     }
 
     createNewNotebook() {
-        this.createNoteBookModal.current.setState((prevState) => ({
+        this.createNotebookModal.current.setState((prevState) => ({
             ...prevState,
             visible: true,
             fileDir: this.state.fileDir,
@@ -47,7 +49,6 @@ export default class FileTree extends React.Component {
             categoryDir: this.concatenateCategoryDir(),
             chapterDir: this.concatenateChapterDir()
         }))
-        console.log(this.createNoteBookModal.current.state)
         this.setState((prevState) => ({
             ...prevState,
             createDirectoryModalVisible: true
@@ -60,7 +61,6 @@ export default class FileTree extends React.Component {
             visible: true,
             notebookDir: this.state.notebookDir,
         }))
-        console.log(this.createCategoryModal.current.state)
         this.setState((prevState) => ({
             ...prevState,
             createDirectoryModalVisible: true
@@ -73,7 +73,6 @@ export default class FileTree extends React.Component {
             visible: true,
             categoryDir: this.state.categoryDir,
         }))
-        console.log(this.createChapterModal.current.state)
         this.setState((prevState) => ({
             ...prevState,
             createDirectoryModalVisible: true
@@ -86,7 +85,6 @@ export default class FileTree extends React.Component {
             visible: true,
             chapterDir: this.state.chapterDir,
         }))
-        console.log(this.createChapterModal.current.state)
         this.setState((prevState) => ({
             ...prevState,
             createDirectoryModalVisible: true
@@ -169,13 +167,35 @@ export default class FileTree extends React.Component {
 
     async onDelete() {
         for (let i = 0; i < this.state.checkedNotebooks.length; i++) {
+            console.log(this.state.fileDir + "/" + this.state.checkedNotebooks[i])
             await FileSystem.deleteAsync(this.state.fileDir + "/" + this.state.checkedNotebooks[i])
         }
         this.setState((prevState) => ({
             ...prevState,
             checkedNotebooks: []
         }))
-        await this.refreshContent()
+        await this.refreshContent(this.state.fileDir, this.state.notebookDir,
+            this.state.categoryDir, this.state.chapterDir, this)
+    }
+
+    async onRename() {
+        const notebookName = this.state.checkedNotebooks[0]
+        const color = await AsyncStorage.getItem(this.state.fileDir + "/" + notebookName)
+        this.editNotebookModal.current.setState((prevState) => ({
+            ...prevState,
+            visible: true,
+            fileDir: this.state.fileDir,
+            directoryName: notebookName,
+            oldDirectoryName: notebookName,
+            choosedColor: color,
+            notebookDir: this.concatenateNotebookDir(),
+            categoryDir: this.concatenateCategoryDir(),
+            chapterDir: this.concatenateChapterDir()
+        }))
+        this.setState((prevState) => ({
+            ...prevState,
+            createDirectoryModalVisible: true
+        }))
     }
 
     render() {
@@ -185,6 +205,10 @@ export default class FileTree extends React.Component {
                     onPress={() => this.onEditButtonPressed()}><Text>{i18n.t('FileTree.Buttons.Edit')}</Text></Button>
                 <Button disabled={!this.state.edit} onPress={async () => await this.onDelete()}>
                     <Text>{i18n.t('FileTree.Buttons.Delete')}</Text>
+                </Button>
+                <Button
+                    disabled={!this.state.edit} onPress={async () => await this.onRename()}>
+                    <Text>{i18n.t('FileTree.Buttons.Rename')}</Text>
                 </Button>
                 <Container style={{flexDirection: 'column'}}>
                     <Button
@@ -216,8 +240,10 @@ export default class FileTree extends React.Component {
                                     </ListItem>);
                                 }
                             })}
-                            <CreateNotebookModal ref={this.createNoteBookModal} onCreated={this.refreshContent}
+                            <CreateNotebookModal ref={this.createNotebookModal} onCreated={this.refreshContent}
                                                  context={this}/>
+                            <EditNotebookModal ref={this.editNotebookModal} onCreated={this.refreshContent}
+                                               context={this}/>
                         </List>
                     </Content>
                 </Container>

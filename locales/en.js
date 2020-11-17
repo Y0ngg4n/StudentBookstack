@@ -3,6 +3,7 @@ const en = {
         Buttons:{
             Edit: "Edit",
             Delete: "Delete",
+            Rename: "Rename",
             AddNotebook: "Add Notebook",
             AddCategory: "Add Category",
             AddChapter: "Add Chapter",

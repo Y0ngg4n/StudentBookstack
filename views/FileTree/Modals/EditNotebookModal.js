@@ -40,8 +40,12 @@ export default class CreateNotebookModal extends React.Component {
     }
 
     async onSaveFolder(event) {
+        const oldDir = this.state.fileDir + "/" + encodeURIComponent(this.state.oldDirectoryName)
         const dir = this.state.fileDir + "/" + encodeURIComponent(this.state.directoryName)
-        await FileSystem.makeDirectoryAsync(dir, {intermediates: true})
+        await FileSystem.moveAsync({
+            from: oldDir,
+            to: dir
+        })
         this.setState((prevState) => ({
             ...prevState,
             visible: false
@@ -50,11 +54,12 @@ export default class CreateNotebookModal extends React.Component {
             color: this.state.choosedColor
         }
         try {
+            await AsyncStorage.removeItem(oldDir)
             await AsyncStorage.setItem(dir, JSON.stringify(config))
         } catch (e) {
             console.log(e)
         }
-        await this.props.onCreated(this.state.fileDir, this.state.notebookDir, this.state.categoryDir, this.state.chapterDir, this.props.context)
+        await this.props.onCreated(this.state.fileDir, dir, this.state.categoryDir, this.state.chapterDir, this.props.context)
     }
 
     setColor(index) {
@@ -78,6 +83,15 @@ export default class CreateNotebookModal extends React.Component {
             choosedColor: color,
             colorChooser: false
         }))
+    }
+
+    componentDidMount(prevProps, prevState, snapshot) {
+        if (this.state.defaultColors.includes(this.state.choosedColor)) {
+            this.setState((prevState) => ({
+                ...prevState,
+                selectedColor: this.state.defaultColors.indexOf(this.state.choosedColor)
+            }))
+        }
     }
 
     render() {
