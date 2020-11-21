@@ -1,7 +1,7 @@
 import React from 'react';
 import {ListItem, Container, Button, Left, List, Body, Text, Content, CheckBox, Right} from "native-base";
 import * as FileSystem from "expo-file-system";
-import {bookstackDir} from "../../config"
+import {bookstackDir, defaultColors} from "../../config"
 import i18n from 'i18n-js';
 import {Ionicons, FontAwesome5} from '@expo/vector-icons';
 import CreateNotebookModal from "./Modals/CreateNotebookModal";
@@ -15,16 +15,21 @@ export default class FileTree extends React.Component {
         const fileDir = FileSystem.documentDirectory + "/" + bookstackDir
         this.state = {
             edit: false,
+            defaultColors: [],
             fileDir: fileDir,
             notebookSelectedIndex: -1,
             categorySelectedIndex: -1,
+            chapterSelectedIndex: -1,
+            pageSelectedIndex: -1,
             notebookCheckedList: [],
             notebookContent: [],
             notebookConfig: [],
             categoryContent: [],
+            categoryConfig: [],
             chapterContent: [],
             pageContent: [],
-            checkedNotebooks: []
+            checkedNotebooks: [],
+            checkedCategories: []
         }
         this.createNotebookModal = React.createRef()
         this.createCategoryModal = React.createRef()
@@ -38,6 +43,16 @@ export default class FileTree extends React.Component {
         await FileSystem.makeDirectoryAsync(this.state.fileDir, {intermediates: true})
         await this.refreshContent(this.state.fileDir, this.state.notebookDir,
             this.state.categoryDir, this.state.chapterDir, this)
+        let dc = await AsyncStorage.getItem('defaultColors')
+
+        if (!dc)
+            await AsyncStorage.setItem('defaultColors', JSON.stringify(defaultColors))
+        else dc = JSON.parse(dc);
+
+        this.setState((prevState) => ({
+            ...prevState,
+            defaultColors: dc,
+        }))
     }
 
     createNewNotebook() {
@@ -47,7 +62,8 @@ export default class FileTree extends React.Component {
             fileDir: this.state.fileDir,
             notebookDir: this.concatenateNotebookDir(),
             categoryDir: this.concatenateCategoryDir(),
-            chapterDir: this.concatenateChapterDir()
+            chapterDir: this.concatenateChapterDir(),
+            defaultColors: this.state.defaultColors
         }))
         this.setState((prevState) => ({
             ...prevState,
@@ -59,7 +75,10 @@ export default class FileTree extends React.Component {
         this.createCategoryModal.current.setState((prevState) => ({
             ...prevState,
             visible: true,
-            notebookDir: this.state.notebookDir,
+            fileDir: this.state.fileDir,
+            notebookDir: this.concatenateNotebookDir(),
+            categoryDir: this.concatenateCategoryDir(),
+            chapterDir: this.concatenateChapterDir()
         }))
         this.setState((prevState) => ({
             ...prevState,
@@ -165,6 +184,24 @@ export default class FileTree extends React.Component {
         }
     }
 
+    onCategoryChecked(name) {
+        if (this.state.checkedNotebooks.includes(name)) {
+            let newCheckedNotebooks = this.state.checkedNotebooks
+            newCheckedNotebooks.splice(newCheckedNotebooks.indexOf(name), 1)
+            this.setState((prevState) => ({
+                ...prevState,
+                checkedNotebooks: newCheckedNotebooks
+            }))
+        } else {
+            let newCheckedNotebooks = this.state.checkedNotebooks
+            newCheckedNotebooks.push(name)
+            this.setState((prevState) => ({
+                ...prevState,
+                checkedNotebooks: newCheckedNotebooks
+            }))
+        }
+    }
+
     async onDelete() {
         for (let i = 0; i < this.state.checkedNotebooks.length; i++) {
             console.log(this.state.fileDir + "/" + this.state.checkedNotebooks[i])
@@ -190,7 +227,8 @@ export default class FileTree extends React.Component {
             choosedColor: color,
             notebookDir: this.concatenateNotebookDir(),
             categoryDir: this.concatenateCategoryDir(),
-            chapterDir: this.concatenateChapterDir()
+            chapterDir: this.concatenateChapterDir(),
+            defaultColors: this.state.defaultColors
         }))
         this.setState((prevState) => ({
             ...prevState,
@@ -199,54 +237,109 @@ export default class FileTree extends React.Component {
     }
 
     render() {
-        return (
+        let notebookList = (
+            <Container style={{flexDirection: 'column'}}>
+                <Button
+                    onPress={() => this.createNewNotebook()}><Text>{i18n.t('FileTree.Buttons.AddNotebook')}</Text></Button>
+                <Content>
+                    <List>
+                        {this.state.notebookContent.map((value, index) => {
+                            const config = this.state.notebookConfig[index]
+                            if (this.state.edit) {
+                                const notebookChecked = this.state.checkedNotebooks.includes(value);
+                                return (
+                                    <ListItem
+                                        style={{backgroundColor: config.color}}
+                                        key={index} selected={this.state.notebookSelectedIndex === index}
+                                        onPress={() => this.selectedNotebook(index)}>
+                                        <Left>
+                                            <Ionicons name={"ios-book"}/></Left>
+                                        <Body><Text>{value}</Text></Body>
+                                        <Right><CheckBox onPress={() => this.onNotebookChecked(value)}
+                                                         checked={notebookChecked}/></Right>
+                                    </ListItem>);
+                            } else {
+                                return (<ListItem
+                                    style={{backgroundColor: config.color}}
+                                    key={index} selected={this.state.notebookSelectedIndex === index}
+                                    onPress={() => this.selectedNotebook(index)}>
+                                    <Left><Ionicons name={"ios-book"}/></Left>
+                                    <Body><Text>{value}</Text></Body>
+                                </ListItem>);
+                            }
+                        })}
+                        <CreateNotebookModal ref={this.createNotebookModal} onCreated={this.refreshContent}
+                                             context={this}/>
+                        <EditNotebookModal ref={this.editNotebookModal} onCreated={this.refreshContent}
+                                           context={this}/>
+                    </List>
+                </Content>
+            </Container>
+        )
+
+        let categoryList = (
+            <Container hidden={this.state.categorySelectedIndex !== -1} style={{flexDirection: 'column'}}>
+                <Button
+                    onPress={() => this.createNewCategory()}><Text>{i18n.t('FileTree.Buttons.AddCategory')}</Text></Button>
+                <Content>
+                    <List>
+                        {this.state.categoryContent.map((value, index) => {
+                            const config = this.state.categoryConfig[index]
+                            if (this.state.edit) {
+                                const categoryChecked = this.state.checkedCategories.includes(value);
+                                return (
+                                    <ListItem
+                                        style={{backgroundColor: config.color}}
+                                        key={index} selected={this.state.categorySelectedIndex === index}
+                                        onPress={() => this.selectedCategory(index)}>
+                                        <Left>
+                                            <Ionicons name={"ios-book"}/></Left>
+                                        <Body><Text>{value}</Text></Body>
+                                        <Right><CheckBox onPress={() => this.onCategoryChecked(value)}
+                                                         checked={categoryChecked}/></Right>
+                                    </ListItem>);
+                            } else {
+                                return (<ListItem
+                                    style={{backgroundColor: config.color}}
+                                    key={index} selected={this.state.categorySelectedIndex === index}
+                                    onPress={() => this.selectedCategory(index)}>
+                                    <Left><Ionicons name={"ios-book"}/></Left>
+                                    <Body><Text>{value}</Text></Body>
+                                </ListItem>);
+                            }
+                        })}
+                    </List>
+                </Content>
+            </Container>)
+
+        let listContainers = (
             <Container style={{flexDirection: 'row'}}>
+                {notebookList}
+            </Container>
+        )
+
+        if (this.state.notebookSelectedIndex !== -1
+            && this.state.categorySelectedIndex === -1
+            && this.state.chapterSelectedIndex === -1) {
+            listContainers = (<Container style={{flexDirection: 'row'}}>
+                {notebookList}
+                {categoryList}
+            </Container>)
+        }
+
+        return (
+            <Container>
                 <Button
                     onPress={() => this.onEditButtonPressed()}><Text>{i18n.t('FileTree.Buttons.Edit')}</Text></Button>
                 <Button disabled={!this.state.edit} onPress={async () => await this.onDelete()}>
                     <Text>{i18n.t('FileTree.Buttons.Delete')}</Text>
                 </Button>
                 <Button
-                    disabled={!this.state.edit} onPress={async () => await this.onRename()}>
+                    disabled={!this.state.edit && this.state.checkedNotebooks.length !== 1}
+                    onPress={async () => await this.onRename()}>
                     <Text>{i18n.t('FileTree.Buttons.Rename')}</Text>
                 </Button>
-                <Container style={{flexDirection: 'column'}}>
-                    <Button
-                        onPress={() => this.createNewNotebook()}><Text>{i18n.t('FileTree.Buttons.AddNotebook')}</Text></Button>
-                    <Content>
-                        <List>
-                            {this.state.notebookContent.map((value, index) => {
-                                const config = this.state.notebookConfig[index]
-                                if (this.state.edit) {
-                                    const notebookChecked = this.state.checkedNotebooks.includes(value);
-                                    return (
-                                        <ListItem
-                                            style={{backgroundColor: config.color}}
-                                            key={index} selected={this.state.notebookSelectedIndex === index}
-                                            onPress={() => this.selectedNotebook(index)}>
-                                            <Left>
-                                                <Ionicons name={"ios-book"}/></Left>
-                                            <Body><Text>{value}</Text></Body>
-                                            <Right><CheckBox onPress={() => this.onNotebookChecked(value)}
-                                                             checked={notebookChecked}/></Right>
-                                        </ListItem>);
-                                } else {
-                                    return (<ListItem
-                                        style={{backgroundColor: config.color}}
-                                        key={index} selected={this.state.notebookSelectedIndex === index}
-                                        onPress={() => this.selectedNotebook(index)}>
-                                        <Left><Ionicons name={"ios-book"}/></Left>
-                                        <Body><Text>{value}</Text></Body>
-                                    </ListItem>);
-                                }
-                            })}
-                            <CreateNotebookModal ref={this.createNotebookModal} onCreated={this.refreshContent}
-                                                 context={this}/>
-                            <EditNotebookModal ref={this.editNotebookModal} onCreated={this.refreshContent}
-                                               context={this}/>
-                        </List>
-                    </Content>
-                </Container>
+                {listContainers}
             </Container>
         )
     }
@@ -261,12 +354,18 @@ export default class FileTree extends React.Component {
         for (let i = 0; i < notebookContent.length; i++) {
             notebookConfig.push(JSON.parse(await AsyncStorage.getItem(fileDir + "/" + notebookContent[i])))
         }
+        const categoryConfig = []
+        for (let i = 0; i < categoryContent.length; i++) {
+            categoryConfig.push(JSON.parse(await AsyncStorage.getItem(fileDir + "/"
+                + context.state.notebookContent[context.state.notebookSelectedIndex])))
+        }
 
         context.setState((prevState) => ({
             ...prevState,
             notebookContent: notebookContent,
             notebookConfig: notebookConfig,
             categoryContent: categoryContent,
+            categoryConfig: categoryConfig,
             chapterContent: chapterContent,
             pagesContent: pageContent,
         }))

@@ -4,6 +4,7 @@ import {StyleSheet} from "react-native";
 import * as Localization from 'expo-localization';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Container, Content, Header, Footer, List, ListItem, Text} from 'native-base'
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import i18n from 'i18n-js';
 
@@ -14,6 +15,7 @@ import * as Font from "expo-font";
 import {AppLoading} from "expo";
 import {Ionicons} from "@expo/vector-icons";
 import {View} from 'native-base'
+
 
 export default class App extends React.Component {
 
@@ -37,6 +39,8 @@ export default class App extends React.Component {
         }
         i18n.locale = loc;
         console.log("Locales set!")
+
+        //Fonts
         await Font.loadAsync({
             Roboto: require('native-base/Fonts/Roboto.ttf'),
             Roboto_medium: require('native-base/Fonts/Roboto_medium.ttf'),
