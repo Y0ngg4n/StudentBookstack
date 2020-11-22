@@ -12,14 +12,12 @@ export default class CreateNotebookModal extends React.Component {
         super(props, context);
         this.props = props;
         this.state = {
-            fileDir: "",
             directoryName: "",
             saveDisabled: true,
             visible: false,
             selectedColor: 0,
             colorChooser: false,
             choosedColor: "#03071E",
-            defaultColors: []
         }
     }
 
@@ -40,7 +38,10 @@ export default class CreateNotebookModal extends React.Component {
     }
 
     async onSaveFolder(event) {
-        const dir = this.state.fileDir + "/" + encodeURIComponent(this.state.directoryName)
+        console.log(this.state.contextState)
+        const dir =
+            this.state.contextState.fileDir
+            + "/" + encodeURIComponent(this.state.directoryName)
         await FileSystem.makeDirectoryAsync(dir, {intermediates: true})
         this.setState((prevState) => ({
             ...prevState,
@@ -54,14 +55,27 @@ export default class CreateNotebookModal extends React.Component {
         } catch (e) {
             console.log(e)
         }
-        await this.props.onCreated(this.state.fileDir, this.state.notebookDir, this.state.categoryDir, this.state.chapterDir, this.props.context)
+        await this.props.onCreated(
+            this.state.contextState.fileDir,
+            this.state.contextState.notebookSelectedIndex,
+            this.state.contextState.categorySelectedIndex,
+            this.state.contextState.chapterSelectedIndex,
+            this.state.contextState.pageSelectedIndex,
+            this.props.context)
+    }
+
+    onCancel() {
+        this.setState((prevState) => ({
+            ...prevState,
+            visible: false,
+        }))
     }
 
     setColor(index) {
         this.setState((prevState) => ({
             ...prevState,
             selectedColor: index,
-            choosedColor: this.state.defaultColors[index]
+            choosedColor: this.state.contextState.defaultColors[index]
         }))
     }
 
@@ -81,6 +95,10 @@ export default class CreateNotebookModal extends React.Component {
     }
 
     render() {
+        if (!this.state.contextState) {
+            return (<Modal visible={this.state.visible}></Modal>)
+        }
+
         const form = (
             <Container>
                 <Form>
@@ -90,7 +108,7 @@ export default class CreateNotebookModal extends React.Component {
                                onChangeText={text => this.onDirectoryChange(text)}/>
                     </Item>
                     <Item>
-                        {this.state.defaultColors.map((value, index) => {
+                        {this.state.contextState.defaultColors.map((value, index) => {
                             return (<Radio key={index} onPress={() => this.setColor(index)}
                                            selected={this.state.selectedColor === index ? true : false}
                                            color={value}
@@ -108,6 +126,12 @@ export default class CreateNotebookModal extends React.Component {
                             <Text>{i18n.t('FileTree.CreateNotebookModal.SaveFolder')}</Text>
                         </Button>
                     </Item>
+                    <Item>
+                        <Button
+                            onPress={() => this.onCancel()}>
+                            <Text>{i18n.t('FileTree.CreateNotebookModal.Cancel')}</Text>
+                        </Button>
+                    </Item>
                 </Form>
             </Container>
         )
@@ -119,7 +143,6 @@ export default class CreateNotebookModal extends React.Component {
                     style={{flex: 1}}/>
             </Container>
         )
-
         return (
             <Modal visible={this.state.visible}>
                 {this.state.colorChooser ? colorChoose : form}

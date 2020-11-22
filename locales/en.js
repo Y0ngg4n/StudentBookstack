@@ -11,7 +11,9 @@ const en = {
         },
         CreateNotebookModal:{
             NamePlaceholder: "Notebook name",
-            SaveFolder: "Save Folder"
+            SaveFolder: "Save Folder",
+            ChooseColor: "Mix own color",
+            Cancel: "Cancel"
         }
     }
 }

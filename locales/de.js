@@ -11,7 +11,9 @@ const de = {
         },
         CreateNotebookModal:{
             NamePlaceholder: "Notizbuchname",
-            SaveFolder: "Notizbuch speichern"
+            SaveFolder: "Notizbuch speichern",
+            ChooseColor: "Eigene Farbe mischen",
+            Cancel: "Abbrechen"
         }
     }
 }

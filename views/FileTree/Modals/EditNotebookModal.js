@@ -12,7 +12,6 @@ export default class CreateNotebookModal extends React.Component {
         super(props, context);
         this.props = props;
         this.state = {
-            fileDir: "",
             directoryName: "",
             saveDisabled: true,
             visible: false,
@@ -37,6 +36,13 @@ export default class CreateNotebookModal extends React.Component {
                 saveDisabled: true
             }))
         }
+    }
+
+    onCancel() {
+        this.setState((prevState) => ({
+            ...prevState,
+            visible: false,
+        }))
     }
 
     async onSaveFolder(event) {
@@ -124,6 +130,12 @@ export default class CreateNotebookModal extends React.Component {
                         <Button disabled={this.state.saveDisabled}
                                 onPress={async (e) => await this.onSaveFolder()}>
                             <Text>{i18n.t('FileTree.CreateNotebookModal.SaveFolder')}</Text>
+                        </Button>
+                    </Item>
+                    <Item>
+                        <Button
+                            onPress={() => this.onCancel()}>
+                            <Text>{i18n.t('FileTree.CreateNotebookModal.Cancel')}</Text>
                         </Button>
                     </Item>
                 </Form>

@@ -39,8 +39,15 @@ export default class CreateNotebookModal extends React.Component {
         }
     }
 
+    onCancel() {
+        this.setState((prevState) => ({
+            ...prevState,
+            visible: false,
+        }))
+    }
+
     async onSaveFolder(event) {
-        const dir = this.state.fileDir + "/" + encodeURIComponent(this.state.directoryName)
+        const dir = this.state.notebookDir + "/" + encodeURIComponent(this.state.directoryName)
         await FileSystem.makeDirectoryAsync(dir, {intermediates: true})
         this.setState((prevState) => ({
             ...prevState,
@@ -106,6 +113,12 @@ export default class CreateNotebookModal extends React.Component {
                         <Button disabled={this.state.saveDisabled}
                                 onPress={async (e) => await this.onSaveFolder()}>
                             <Text>{i18n.t('FileTree.CreateNotebookModal.SaveFolder')}</Text>
+                        </Button>
+                    </Item>
+                    <Item>
+                        <Button
+                            onPress={() => this.onCancel()}>
+                            <Text>{i18n.t('FileTree.CreateNotebookModal.Cancel')}</Text>
                         </Button>
                     </Item>
                 </Form>

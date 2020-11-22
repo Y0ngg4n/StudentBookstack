@@ -7,6 +7,7 @@ import {Ionicons, FontAwesome5} from '@expo/vector-icons';
 import CreateNotebookModal from "./Modals/CreateNotebookModal";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import EditNotebookModal from "./Modals/EditNotebookModal";
+import CreateCategoryModal from "./Modals/CreateCategoryModal";
 
 export default class FileTree extends React.Component {
 
@@ -41,8 +42,7 @@ export default class FileTree extends React.Component {
     async componentDidMount() {
         // await FileSystem.deleteAsync(this.state.fileDir, {idempotent: true})
         await FileSystem.makeDirectoryAsync(this.state.fileDir, {intermediates: true})
-        await this.refreshContent(this.state.fileDir, this.state.notebookDir,
-            this.state.categoryDir, this.state.chapterDir, this)
+        await this.refreshContentLocal()
         let dc = await AsyncStorage.getItem('defaultColors')
 
         if (!dc)
@@ -56,18 +56,11 @@ export default class FileTree extends React.Component {
     }
 
     createNewNotebook() {
+        //TODO: Switch Notebookdir to index
         this.createNotebookModal.current.setState((prevState) => ({
             ...prevState,
             visible: true,
-            fileDir: this.state.fileDir,
-            notebookDir: this.concatenateNotebookDir(),
-            categoryDir: this.concatenateCategoryDir(),
-            chapterDir: this.concatenateChapterDir(),
-            defaultColors: this.state.defaultColors
-        }))
-        this.setState((prevState) => ({
-            ...prevState,
-            createDirectoryModalVisible: true
+            contextState: this.state,
         }))
     }
 
@@ -78,7 +71,8 @@ export default class FileTree extends React.Component {
             fileDir: this.state.fileDir,
             notebookDir: this.concatenateNotebookDir(),
             categoryDir: this.concatenateCategoryDir(),
-            chapterDir: this.concatenateChapterDir()
+            chapterDir: this.concatenateChapterDir(),
+            defaultColors: this.state.defaultColors
         }))
         this.setState((prevState) => ({
             ...prevState,
@@ -110,11 +104,12 @@ export default class FileTree extends React.Component {
         }))
     }
 
-    selectedNotebook(index) {
-        this.setState((prevState) => ({
+    async selectedNotebook(index) {
+        await this.setState((prevState) => ({
             ...prevState,
             notebookSelectedIndex: index
         }))
+        await this.refreshContentLocal()
     }
 
     selectedCategory(index) {
@@ -211,8 +206,7 @@ export default class FileTree extends React.Component {
             ...prevState,
             checkedNotebooks: []
         }))
-        await this.refreshContent(this.state.fileDir, this.state.notebookDir,
-            this.state.categoryDir, this.state.chapterDir, this)
+        await this.refreshContentLocal()
     }
 
     async onRename() {
@@ -251,7 +245,7 @@ export default class FileTree extends React.Component {
                                     <ListItem
                                         style={{backgroundColor: config.color}}
                                         key={index} selected={this.state.notebookSelectedIndex === index}
-                                        onPress={() => this.selectedNotebook(index)}>
+                                        onPress={async () => await this.selectedNotebook(index)}>
                                         <Left>
                                             <Ionicons name={"ios-book"}/></Left>
                                         <Body><Text>{value}</Text></Body>
@@ -268,12 +262,12 @@ export default class FileTree extends React.Component {
                                 </ListItem>);
                             }
                         })}
-                        <CreateNotebookModal ref={this.createNotebookModal} onCreated={this.refreshContent}
-                                             context={this}/>
-                        <EditNotebookModal ref={this.editNotebookModal} onCreated={this.refreshContent}
-                                           context={this}/>
                     </List>
                 </Content>
+                <CreateNotebookModal ref={this.createNotebookModal} onCreated={this.refreshContent}
+                                     context={this}/>
+                <EditNotebookModal ref={this.editNotebookModal} onCreated={this.refreshContent}
+                                   context={this}/>
             </Container>
         )
 
@@ -295,8 +289,10 @@ export default class FileTree extends React.Component {
                                         <Left>
                                             <Ionicons name={"ios-book"}/></Left>
                                         <Body><Text>{value}</Text></Body>
-                                        <Right><CheckBox onPress={() => this.onCategoryChecked(value)}
-                                                         checked={categoryChecked}/></Right>
+                                        <Right>
+                                            <CheckBox onPress={() => this.onCategoryChecked(value)}
+                                                      checked={categoryChecked}/>
+                                        </Right>
                                     </ListItem>);
                             } else {
                                 return (<ListItem
@@ -310,6 +306,8 @@ export default class FileTree extends React.Component {
                         })}
                     </List>
                 </Content>
+                <CreateCategoryModal ref={this.createCategoryModal} onCreated={this.refreshContent}
+                                     context={this}/>
             </Container>)
 
         let listContainers = (
@@ -344,11 +342,28 @@ export default class FileTree extends React.Component {
         )
     }
 
-    async refreshContent(fileDir, notebookDir, categoryDir, chapterDir, context) {
+    async refreshContentLocal() {
+        await this.refreshContent(this.state.fileDir, this.state.notebookSelectedIndex,
+            this.state.categorySelectedIndex, this.state.chapterSelectedIndex,
+            this.state.pageSelectedIndex, this)
+    }
+
+    async refreshContent(fileDir, notebookSelectedIndex, categorySelectedIndex, chapterSelectedIndex, pageSelectedIndex, context) {
+        console.log("Refresh started!")
+        console.log("################")
+        console.log(fileDir)
+        console.log(notebookSelectedIndex)
+        console.log(categorySelectedIndex)
+        console.log(chapterSelectedIndex)
+        console.log("################")
         const notebookContent = await FileSystem.readDirectoryAsync(fileDir)
-        const categoryContent = context.state.notebookSelectedIndex !== -1 ? await FileSystem.readDirectoryAsync(notebookDir) : []
-        const chapterContent = context.state.categoryDir ? await FileSystem.readDirectoryAsync(categoryDir) : []
-        const pageContent = context.state.chapterDir ? await FileSystem.readDirectoryAsync(chapterDir) : []
+        let categoryContent = []
+        if (context.state.notebookSelectedIndex !== -1) {
+            const notebookDir = fileDir + "/" + notebookContent[notebookSelectedIndex];
+            categoryContent = await FileSystem.readDirectoryAsync(notebookDir)
+        }
+        // const chapterContent = context.state.categoryDir ? await FileSystem.readDirectoryAsync(categoryDir) : []
+        // const pageContent = context.state.chapterDir ? await FileSystem.readDirectoryAsync(chapterDir) : []
 
         const notebookConfig = []
         for (let i = 0; i < notebookContent.length; i++) {
@@ -366,8 +381,6 @@ export default class FileTree extends React.Component {
             notebookConfig: notebookConfig,
             categoryContent: categoryContent,
             categoryConfig: categoryConfig,
-            chapterContent: chapterContent,
-            pagesContent: pageContent,
         }))
     }
 
