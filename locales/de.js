@@ -3,15 +3,15 @@ const de = {
         Buttons:{
             Edit: "Bearbeiten",
             Delete: "Löschen",
-            Rename: "Rename",
+            Rename: "Umbenennen",
             AddNotebook: "Neues Notizbuch",
             AddCategory: "Neue Kategorie",
             AddChapter: "Neues Kapitel",
             AddPage: "Neue Seite",
         },
-        CreateNotebookModal:{
-            NamePlaceholder: "Notizbuchname",
-            SaveFolder: "Notizbuch speichern",
+        CreateModal:{
+            NamePlaceholder: "Name",
+            SaveFolder: "Speichern",
             ChooseColor: "Eigene Farbe mischen",
             Cancel: "Abbrechen"
         }

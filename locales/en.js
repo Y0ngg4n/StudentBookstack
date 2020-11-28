@@ -9,9 +9,9 @@ const en = {
             AddChapter: "Add Chapter",
             AddPage: "Add Page",
         },
-        CreateNotebookModal:{
-            NamePlaceholder: "Notebook name",
-            SaveFolder: "Save Folder",
+        CreateModal:{
+            NamePlaceholder: "Name",
+            SaveFolder: "Save",
             ChooseColor: "Mix own color",
             Cancel: "Cancel"
         }

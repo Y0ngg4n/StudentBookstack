@@ -6,7 +6,7 @@ import * as FileSystem from "expo-file-system";
 import {TriangleColorPicker} from "react-native-color-picker";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default class CreateNotebookModal extends React.Component {
+export default class EditModal extends React.Component {
 
     constructor(props, context) {
         super(props, context);
@@ -46,8 +46,10 @@ export default class CreateNotebookModal extends React.Component {
     }
 
     async onSaveFolder(event) {
-        const oldDir = this.state.fileDir + "/" + encodeURIComponent(this.state.oldDirectoryName)
-        const dir = this.state.fileDir + "/" + encodeURIComponent(this.state.directoryName)
+        const oldDir = this.state.itemData.baseDir + "/" + encodeURIComponent(this.state.itemData.dirName)
+        const dir = this.state.itemData.baseDir + "/" + encodeURIComponent(this.state.directoryName)
+        console.log("OldDir" + oldDir)
+        console.log("dir" + dir)
         if (oldDir !== dir) {
             await FileSystem.moveAsync({
                 from: oldDir,
@@ -67,7 +69,13 @@ export default class CreateNotebookModal extends React.Component {
         } catch (e) {
             console.log(e)
         }
-        await this.props.onCreated(this.state.fileDir, dir, this.state.categoryDir, this.state.chapterDir, this.props.context)
+        await this.props.onCreated(
+            this.state.contextState.fileDir,
+            this.state.contextState.notebookSelectedIndex,
+            this.state.contextState.categorySelectedIndex,
+            this.state.contextState.chapterSelectedIndex,
+            this.state.contextState.pageSelectedIndex,
+            this.props.context)
     }
 
     setColor(index) {
@@ -110,7 +118,7 @@ export default class CreateNotebookModal extends React.Component {
                 <Form>
                     <Item>
                         <Input value={this.state.directoryName}
-                               placeholder={i18n.t('FileTree.CreateNotebookModal.NamePlaceholder')}
+                               placeholder={i18n.t('FileTree.CreateModal.NamePlaceholder')}
                                onChangeText={text => this.onDirectoryChange(text)}/>
                     </Item>
                     <Item>
@@ -123,19 +131,19 @@ export default class CreateNotebookModal extends React.Component {
                     </Item>
                     <Item>
                         <Button onPress={() => this.onChooseColor()}>
-                            <Text>{i18n.t('FileTree.CreateNotebookModal.ChooseColor')}</Text>
+                            <Text>{i18n.t('FileTree.CreateModal.ChooseColor')}</Text>
                         </Button>
                     </Item>
                     <Item>
                         <Button disabled={this.state.saveDisabled}
                                 onPress={async (e) => await this.onSaveFolder()}>
-                            <Text>{i18n.t('FileTree.CreateNotebookModal.SaveFolder')}</Text>
+                            <Text>{i18n.t('FileTree.CreateModal.SaveFolder')}</Text>
                         </Button>
                     </Item>
                     <Item>
                         <Button
                             onPress={() => this.onCancel()}>
-                            <Text>{i18n.t('FileTree.CreateNotebookModal.Cancel')}</Text>
+                            <Text>{i18n.t('FileTree.CreateModal.Cancel')}</Text>
                         </Button>
                     </Item>
                 </Form>
