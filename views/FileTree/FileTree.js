@@ -85,6 +85,16 @@ export default class FileTree extends React.Component {
         }))
     }
 
+    async createNewPage() {
+        this.createModal.current.setState((prevState) => ({
+            ...prevState,
+            visible: true,
+            contextState: this.state,
+            directoryName: "",
+            baseDir: this.concatenatePageDir(),
+        }))
+    }
+
     async selectedNotebook(index) {
         await this.setState((prevState) => ({
             ...prevState,
@@ -99,6 +109,21 @@ export default class FileTree extends React.Component {
             categorySelectedIndex: index
         }))
     }
+
+    selectedChapter(index) {
+        this.setState((prevState) => ({
+            ...prevState,
+            chapterSelectedIndex: index
+        }))
+    }
+
+    selectedPage(index) {
+        this.setState((prevState) => ({
+            ...prevState,
+            pageSelectedIndex: index
+        }))
+    }
+
 
     concatenateNotebookDir() {
         return this.state.fileDir + "/"
@@ -117,14 +142,13 @@ export default class FileTree extends React.Component {
             + "/" + encodeURIComponent(this.state.categoryContent[this.state.categorySelectedIndex].dirName)
     }
 
-
-    selectedPage(key) {
-        this.setState((prevState) => ({
-            ...prevState,
-            categoryDir: this.state.fileDir + "/" + this.state.notebookDir + "/" +
-                this.state.categoryDir + "/" + this.state.chapterDir + "/" + encodeURIComponent(name)
-        }))
+    concatenatePageDir() {
+        return this.state.fileDir + "/"
+            + encodeURIComponent(this.state.notebookContent[this.state.notebookSelectedIndex].dirName)
+            + "/" + encodeURIComponent(this.state.categoryContent[this.state.categorySelectedIndex].dirName)
+            + "/" + encodeURIComponent(this.state.chapterContent[this.state.chapterSelectedIndex].dirName)
     }
+
 
     async onDelete(itemData) {
         switch (itemData.type) {
@@ -194,6 +218,9 @@ export default class FileTree extends React.Component {
             case 2:
                 selected = this.state.chapterSelectedIndex === itemData.index
                 break;
+            case 3:
+                selected = this.state.pageSelectedIndex === itemData.index
+                break;
         }
         return (
             <View style={styles.item}>
@@ -206,6 +233,12 @@ export default class FileTree extends React.Component {
                                       break;
                                   case 1:
                                       await this.selectedCategory(itemData.index);
+                                      break;
+                                  case 2:
+                                      await this.selectedChapter(itemData.index);
+                                      break;
+                                  case 3:
+                                      await this.selectedPage(itemData.index);
                                       break;
                               }
                           }}>
@@ -306,6 +339,23 @@ export default class FileTree extends React.Component {
             </View>
         )
 
+        let pageSwipeableList = (
+            <View style={{flexGrow: 1}}>
+                <Button
+                    onPress={() => this.createNewPage()}><Text>{i18n.t('FileTree.Buttons.AddPage')}</Text></Button>
+                <SwipeableFlatList
+                    data={this.state.pageContent}
+                    renderItem={({item}) => this.renderListItem(item)}
+                    keyExtractor={item => item.dirName}
+                    shouldBounceOnMount={true}
+                    maxSwipeDistance={this.maxSwipeDistance}
+                    contentContainerStyle={styles.contentContainerStyle}
+                    ItemSeparatorComponent={this.renderItemSeparator}
+                    renderQuickActions={({index, item}) => this.renderQuickActions(index, item)}
+                />
+            </View>
+        )
+
         let listContainers = (
             <Container>
                 {/*{notebookList}*/}
@@ -329,6 +379,17 @@ export default class FileTree extends React.Component {
                 {notebookSwipeableList}
                 {categorySwipeableList}
                 {chapterSwipeableList}
+            </Container>)
+        } else if (
+            this.state.notebookSelectedIndex !== -1
+            && this.state.categorySelectedIndex !== -1
+            && this.state.chapterSelectedIndex !== -1
+        ) {
+            listContainers = (<Container style={{flexDirection: 'row'}}>
+                {notebookSwipeableList}
+                {categorySwipeableList}
+                {chapterSwipeableList}
+                {pageSwipeableList}
             </Container>)
         }
 
@@ -375,6 +436,13 @@ export default class FileTree extends React.Component {
             chapterContent = await FileSystem.readDirectoryAsync(categoryDir)
         }
 
+        let pageContent = []
+        let chapterDir = ""
+        if (context.state.chapterSelectedIndex !== -1) {
+            chapterDir = categoryDir + "/" + encodeURIComponent(chapterContent[categorySelectedIndex]);
+            pageContent = await FileSystem.readDirectoryAsync(chapterDir)
+        }
+
         // Configs
         const notebookContentMap = []
         for (let i = 0; i < notebookContent.length; i++) {
@@ -391,7 +459,6 @@ export default class FileTree extends React.Component {
 
         const categoryContentMap = []
         for (let i = 0; i < categoryContent.length; i++) {
-            console.log("###Category")
             categoryContentMap.push(
                 {
                     index: i,
@@ -405,7 +472,6 @@ export default class FileTree extends React.Component {
 
         const chapterContentMap = []
         for (let i = 0; i < chapterContent.length; i++) {
-            console.log("###Category")
             chapterContentMap.push(
                 {
                     index: i,
@@ -417,11 +483,25 @@ export default class FileTree extends React.Component {
             )
         }
 
+        const pageContentMap = []
+        for (let i = 0; i < pageContent.length; i++) {
+            pageContentMap.push(
+                {
+                    index: i,
+                    dirName: pageContent[i],
+                    baseDir: chapterDir,
+                    config: JSON.parse(await AsyncStorage.getItem(chapterDir + "/" + encodeURIComponent(pageContent[i]))),
+                    type: 3
+                }
+            )
+        }
+
         context.setState((prevState) => ({
             ...prevState,
             notebookContent: notebookContentMap,
             categoryContent: categoryContentMap,
-            chapterContent: chapterContentMap
+            chapterContent: chapterContentMap,
+            pageContent: pageContentMap,
         }))
     }
 }
