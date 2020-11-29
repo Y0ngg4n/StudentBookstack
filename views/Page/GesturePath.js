@@ -10,20 +10,24 @@ export default class GesturePath extends React.Component {
         this.state = {
             width: window.width,
             height: window.height,
-            path: []
+            paths: []
         }
     }
 
     render() {
-        const points = this.state.path.map(p => `${p.x},${p.y}`).join(' ');
         return (
             <Svg height="100%" width="100%" viewBox={`0 0 ${this.state.width} ${this.state.height}`}>
-                <Polyline
-                    points={points}
-                    fill="none"
-                    stroke={"blue"}
-                    strokeWidth="1"
-                />
+                {this.state.paths.map((value, index) => {
+                    return (
+                        <Polyline
+                            key={index.toString()}
+                            points={value.map(p => `${p.x},${p.y}`).join(' ')}
+                            fill="none"
+                            stroke={"blue"}
+                            strokeWidth="1"
+                        />
+                    )
+                })}
             </Svg>
         );
     }

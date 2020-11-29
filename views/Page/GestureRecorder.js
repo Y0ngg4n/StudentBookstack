@@ -9,29 +9,24 @@ export default class GestureRecorder extends React.Component {
         this.gesturePath = React.createRef()
         const panResponder = PanResponder.create({
             onMoveShouldSetPanResponder: () => true,
-            onPanResponderGrant: () => {
+            onPanResponderGrant: (event, gestureState) => {
                 console.log("Grant")
-                this.gesturePath.current.setState((prevState) => ({
-                    ...prevState,
-                    path: []
-                }))
+                const tmpPaths = this.gesturePath.current.state.paths
+                tmpPaths.push([])
+                this.setGesturePaths(tmpPaths)
             },
-            onPanResponderMove: (event, gesture) => {
-                const tmpPath = this.gesturePath.current.state.path
-                tmpPath.push({
+            onPanResponderMove: (event, gestureState) => {
+                console.log("Move")
+                let tmpPaths = this.gesturePath.current.state.paths
+                tmpPaths[tmpPaths.length - 1].push({
                     x: event.nativeEvent.locationX,
                     y: event.nativeEvent.locationY
                 })
-                console.log(tmpPath)
-                this.gesturePath.current.setState((prevState) => ({
-                    ...prevState,
-                    path: tmpPath
-                }))
-                // Uncomment the next line to draw the path as the user is performing the touch. (A new array must be created so setState recognises the change and re-renders the App)
-                // onPathChanged([...pathRef.current]);
+                this.setGesturePaths(tmpPaths)
             },
-            onPanResponderRelease: () => {
-                // onPathChanged([...pathRef.current])
+            onPanResponderRelease: (event, gestureState) => {
+                console.log("Release")
+                // this.setGesturePaths(event, gestureState)
             }
         })
         this.state = {
@@ -39,8 +34,14 @@ export default class GestureRecorder extends React.Component {
         }
     }
 
-    render() {
+    setGesturePaths(paths) {
+        this.gesturePath.current.setState((prevState) => ({
+            ...prevState,
+            paths: paths
+        }))
+    }
 
+    render() {
         return (
             <View
                 style={{flex: 1, backgroundColor: 'red'}}
