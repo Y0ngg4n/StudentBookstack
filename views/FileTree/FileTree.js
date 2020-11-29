@@ -61,6 +61,7 @@ export default class FileTree extends React.Component {
             visible: true,
             contextState: this.state,
             directoryName: "",
+            saveDisabled: true,
             baseDir: this.state.fileDir,
         }))
     }
@@ -71,6 +72,7 @@ export default class FileTree extends React.Component {
             visible: true,
             contextState: this.state,
             directoryName: "",
+            saveDisabled: true,
             baseDir: this.concatenateNotebookDir(),
         }))
     }
@@ -91,6 +93,7 @@ export default class FileTree extends React.Component {
             visible: true,
             contextState: this.state,
             directoryName: "",
+            saveDisabled: true,
             baseDir: this.concatenatePageDir(),
         }))
     }

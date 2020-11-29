@@ -15,6 +15,7 @@ import * as Font from "expo-font";
 import {AppLoading} from "expo";
 import {Ionicons} from "@expo/vector-icons";
 import {View} from 'native-base'
+import PageView from "./views/Page/PageView";
 
 
 export default class App extends React.Component {
@@ -54,12 +55,9 @@ export default class App extends React.Component {
         if (!this.state.isReady) {
             return <AppLoading/>;
         }
+
         return (
-            <Container>
-                {/*<Header><Text>Header</Text></Header>*/}
-                <FileTree/>
-                {/*<Footer><Text>Footer</Text></Footer>*/}
-            </Container>
+            <PageView/>
         );
     }
 
