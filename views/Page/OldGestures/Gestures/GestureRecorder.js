@@ -1,5 +1,5 @@
 import React, {useRef} from "react";
-import {View, PanResponder, StyleSheet} from "react-native";
+import {View, PanResponder, StyleSheet, Animated} from "react-native";
 import GesturePath from "./GesturePath";
 
 export default class GestureRecorder extends React.Component {
@@ -11,6 +11,7 @@ export default class GestureRecorder extends React.Component {
             onMoveShouldSetPanResponder: () => true,
             onPanResponderGrant: (event, gestureState) => {
                 console.log("Grant")
+                console.log(event)
                 const tmpPaths = this.gesturePath.current.state.paths
                 tmpPaths.push([])
                 this.setGesturePaths(tmpPaths)
@@ -43,11 +44,11 @@ export default class GestureRecorder extends React.Component {
 
     render() {
         return (
-            <View
+            <Animated.View
                 style={{flex: 1, backgroundColor: 'red'}}
                 {...this.state.panResponder.panHandlers}>
                 <GesturePath ref={this.gesturePath}/>
-            </View>
+            </Animated.View>
         )
     }
 }

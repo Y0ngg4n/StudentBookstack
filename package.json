@@ -8,31 +8,27 @@
     "eject": "expo eject"
   },
   "dependencies": {
-    "@expo/vector-icons": "^10.2.1",
+    "@expo/vector-icons": "^10.0.0",
     "@react-native-async-storage/async-storage": "^1.13.2",
     "@react-native-community/async-storage": "~1.12.0",
-    "d3": "^6.2.0",
     "expo": "~39.0.2",
-    "expo-file-system": "^9.2.0",
+    "expo-file-system": "~9.2.0",
     "expo-font": "~8.3.0",
     "expo-localization": "~9.0.0",
     "expo-status-bar": "~1.0.2",
     "i18n-js": "^3.8.0",
     "native-base": "^2.13.14",
-    "p5": "^1.1.9",
-    "pressure": "^2.2.0",
     "react": "16.13.1",
     "react-dom": "16.13.1",
     "react-native": "^0.63.3",
-    "react-native-appearance": "^0.3.4",
+    "react-native-appearance": "~0.3.3",
     "react-native-color-picker": "^0.6.0",
+    "react-native-gesture-handler": "~1.7.0",
     "react-native-modal": "^11.5.6",
     "react-native-safe-area-context": "3.1.4",
     "react-native-svg": "12.1.0",
     "react-native-swipeable-list": "^0.1.0",
-    "react-native-web": "~0.13.12",
-    "react-native-webview": "^11.0.0",
-    "react-pressure": "^0.1.7"
+    "react-native-web": "~0.13.7"
   },
   "devDependencies": {
     "@babel/core": "~7.9.0"
